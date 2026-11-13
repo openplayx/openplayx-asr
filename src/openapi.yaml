@@ -1,0 +1,236 @@
+openapi: 3.1.0
+info:
+  title: OpenPlayX speech recognition service
+  version: "1"
+  description: |
+    Project-specific asynchronous transcription API (not the whisper.cpp
+    example server, and not OpenAI audio API compatible). The client uploads
+    audio it already normalised to 16 kHz mono 16-bit PCM WAV; the service
+    never receives video URLs, NAS credentials or client paths. Result times
+    are integer milliseconds relative to the uploaded audio (`audio_ms`);
+    the client maps them to its media timeline. Transcription only: no
+    translation.
+servers:
+  - url: /
+security:
+  - bearer: []
+paths:
+  /healthz:
+    get:
+      security: []
+      summary: Liveness
+      responses:
+        "200": { description: OK }
+  /v1/capabilities:
+    get:
+      summary: Models, audio format, timestamp level and limits
+      responses:
+        "200":
+          description: Capabilities
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Capabilities" }
+        "401": { $ref: "#/components/responses/Error" }
+  /v1/transcription-jobs:
+    post:
+      summary: Upload normalised audio and create a job (idempotent)
+      parameters:
+        - { name: model, in: query, required: true, schema: { type: string } }
+        - { name: language, in: query, schema: { type: string, default: auto, description: "auto or ISO 639-1" } }
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, pattern: "^[A-Za-z0-9_-]{16,128}$" }
+          description: The same user and key return the existing job; a different input with the same key is 409.
+        - name: X-Content-SHA256
+          in: header
+          required: true
+          schema: { type: string, pattern: "^[0-9a-f]{64}$" }
+      requestBody:
+        required: true
+        content:
+          audio/wav:
+            schema: { type: string, format: binary }
+      responses:
+        "202":
+          description: Created and queued
+          headers:
+            Location: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Job" }
+        "200":
+          description: Existing job for this idempotency key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Job" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "413": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+    get:
+      summary: Look up the caller's job by idempotency key (reconciliation after a lost response)
+      parameters:
+        - { name: idempotency_key, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Matching jobs (zero or one)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobs: { type: array, items: { $ref: "#/components/schemas/Job" } }
+  /v1/transcription-jobs/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Job state, progress and errors (only the owner's jobs are visible)
+      responses:
+        "200":
+          description: Job
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Job" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      summary: Delete a terminal job with its input and output
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /v1/transcription-jobs/{id}/result:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Structured transcript; 409 until the job succeeded
+      responses:
+        "200":
+          description: Result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Result" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /v1/transcription-jobs/{id}/cancel:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Request cancellation (idempotent); `cancelling` until work stops
+      responses:
+        "200":
+          description: Already terminal or cancelled while queued
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Job" }
+        "202":
+          description: Cancellation in progress
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Job" }
+        "404": { $ref: "#/components/responses/Error" }
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer }
+  responses:
+    Error:
+      description: Error with a short code
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    examples: [unauthorized, model_unknown, idempotency_conflict, upload_too_large, audio_format_unsupported, audio_too_long, queue_full, not_ready, job_active, not_found]
+  schemas:
+    Capabilities:
+      type: object
+      properties:
+        service: { type: string, const: openplayx-asr }
+        api_version: { type: integer }
+        engine: { type: string }
+        engine_version: { type: string }
+        timestamp_level: { type: string, enum: [segment] }
+        timebase: { type: string, const: audio_ms }
+        translation: { type: boolean, const: false }
+        models:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              revision: { type: string }
+              sha256: { type: string }
+              type: { type: string }
+              multilingual: { type: boolean }
+        audio:
+          type: object
+          properties:
+            format: { type: string, const: wav }
+            codec: { type: string, const: pcm_s16le }
+            sample_rate: { type: integer, const: 16000 }
+            channels: { type: integer, const: 1 }
+        limits:
+          type: object
+          properties:
+            max_upload_bytes: { type: integer }
+            max_audio_ms: { type: integer }
+            max_queue: { type: integer }
+            concurrency: { type: integer }
+            gpu: { type: boolean }
+    Job:
+      type: object
+      required: [id, status]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [queued, running, cancelling, succeeded, failed, cancelled] }
+        model: { type: string }
+        language: { type: string }
+        audio_ms: { type: integer }
+        processed_ms: { type: integer }
+        queue_position: { type: integer }
+        result_available: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        error:
+          type: object
+          properties:
+            code: { type: string }
+    Result:
+      type: object
+      properties:
+        schema_version: { type: integer, const: 1 }
+        timebase: { type: string, const: audio_ms }
+        language: { type: string }
+        model_id: { type: string }
+        model_revision: { type: string }
+        engine: { type: string }
+        engine_version: { type: string }
+        timestamp_level: { type: string, enum: [segment] }
+        audio_ms: { type: integer }
+        window_ms: { type: integer }
+        overlap_ms: { type: integer }
+        windows:
+          type: array
+          description: Recognition windows; segment times are absolute within the uploaded audio. Segments starting in a window's overlap tail belong to the next window.
+          items:
+            type: object
+            properties:
+              offset_ms: { type: integer }
+              duration_ms: { type: integer }
+              skipped: { type: boolean, description: "silence gate (not VAD)" }
+              segments:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    start_ms: { type: integer }
+                    end_ms: { type: integer }
+                    text: { type: string }
+                    no_speech_prob: { type: number }

@@ -1,0 +1,21 @@
+{
+  "listen": "127.0.0.1:8787",
+  "data_dir": "/var/lib/openplayx-asr/data",
+  "tokens_file": "/etc/openplayx-asr/tokens.json",
+  "models": [
+    {
+      "id": "whisper-base-multilingual",
+      "path": "/var/lib/openplayx-asr/models/ggml-base.bin",
+      "sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+      "bytes": 147951465
+    }
+  ],
+  "limits": {
+    "threads": 4,
+    "max_queue": 8,
+    "max_upload_bytes": 209715200,
+    "max_audio_ms": 10800000,
+    "job_timeout_seconds": 14400,
+    "ttl_hours": 24
+  }
+}

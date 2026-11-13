@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>openplayx-asr API</title>
+<style>
+body{font:15px/1.5 system-ui,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem;color:#222}
+code,pre{font:13px ui-monospace,monospace}pre{background:#f5f5f7;padding:1rem;overflow:auto;border-radius:6px}
+table{border-collapse:collapse}td,th{border-bottom:1px solid #ddd;padding:.3rem .6rem;text-align:left}
+</style>
+</head>
+<body>
+<h1>openplayx-asr</h1>
+<p>Asynchronous speech recognition for OpenPlayX (whisper.cpp, in-process). Upload 16&nbsp;kHz mono 16-bit PCM WAV; times in results are <code>audio_ms</code>. All <code>/v1</code> endpoints need <code>Authorization: Bearer &lt;token&gt;</code>. Full contract: <a href="/openapi.yaml">openapi.yaml</a> (OpenAPI 3.1).</p>
+<table>
+<tr><th>Endpoint</th><th>Purpose</th></tr>
+<tr><td><code>GET /v1/capabilities</code></td><td>Models, audio format, limits</td></tr>
+<tr><td><code>POST /v1/transcription-jobs?model=&amp;language=</code></td><td>Upload audio (headers <code>Idempotency-Key</code>, <code>X-Content-SHA256</code>) → 202 + job</td></tr>
+<tr><td><code>GET /v1/transcription-jobs?idempotency_key=</code></td><td>Find a job after a lost response</td></tr>
+<tr><td><code>GET /v1/transcription-jobs/{id}</code></td><td>Status and progress</td></tr>
+<tr><td><code>GET /v1/transcription-jobs/{id}/result</code></td><td>Transcript (409 until succeeded)</td></tr>
+<tr><td><code>POST /v1/transcription-jobs/{id}/cancel</code></td><td>Idempotent cancel</td></tr>
+<tr><td><code>DELETE /v1/transcription-jobs/{id}</code></td><td>Delete a finished job and its data</td></tr>
+</table>
+<h2>Specification</h2>
+<pre id="spec">Loading…</pre>
+<script>
+fetch('/openapi.yaml').then(r=>r.text()).then(t=>{document.getElementById('spec').textContent=t});
+</script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+# Reference systemd unit. Resource limits keep recognition from starving
+# other work on the same host (e.g. CI builds on 211); tune after measuring.
+[Unit]
+Description=OpenPlayX speech recognition service (whisper.cpp, CPU)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=openplayx-asr
+Group=openplayx-asr
+ExecStart=/opt/openplayx-asr/openplayx-asr -config /etc/openplayx-asr/config.json
+Restart=on-failure
+RestartSec=5
+UMask=0077
+# One job at a time with limits.threads threads; cap CPU and memory anyway.
+CPUQuota=400%
+CPUWeight=20
+Nice=10
+MemoryMax=3G
+TasksMax=64
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ReadOnlyPaths=/etc/openplayx-asr /var/lib/openplayx-asr/models
+ReadWritePaths=/var/lib/openplayx-asr/data
+
+[Install]
+WantedBy=multi-user.target
