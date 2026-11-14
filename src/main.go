@@ -83,7 +83,7 @@ func setup(cfg *Config, engine Engine) (*API, *Store, func(), error) {
 		closeAll()
 		return nil, nil, nil, err
 	}
-	return &API{store: store, tokens: tokens, limits: cfg.Limits, tmpDir: tmp}, store, closeAll, nil
+	return &API{store: store, tokens: tokens, limits: cfg.Limits, tmpDir: tmp, staged: newStagedUploads()}, store, closeAll, nil
 }
 
 func run(ctx context.Context, cfg *Config, engine Engine) error {

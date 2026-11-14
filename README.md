@@ -26,6 +26,23 @@ Result times are milliseconds relative to the uploaded audio. The App adds its e
 
 Every user only sees their own jobs. Unknown or foreign job ids return 404. Inputs are deleted when a job ends, and finished jobs expire after `ttl_hours`. Jobs that were queued or running during a restart are run again from their stored input.
 
+## MCP
+
+`POST /mcp` exposes `list_models`, `create_transcription`,
+`get_transcription`, `get_transcription_result` and `cancel_transcription`.
+Audio is never a tool argument: upload it with `POST /v1/audio-uploads`
+(same checks as job creation) to get a short-lived, per-user `audio_ref`, then
+call `create_transcription` with it and an `operation_id` (idempotency key).
+
+Streamable HTTP subset: single JSON-RPC 2.0 messages over `POST`, answered
+with `application/json` (no SSE, no server-initiated messages); stateless (no
+`Mcp-Session-Id`); `initialize`, `ping`, `tools/list`, `tools/call` and
+notifications; protocol versions 2025-11-25, 2025-06-18 and 2025-03-26. The
+same bearer token as the HTTP API is required on every request; requests with
+a foreign `Origin` are refused. Business failures are tool results with
+`isError: true` and the HTTP API's error codes. The MCP layer calls the same
+service code as the HTTP handlers (no second state, no loopback request).
+
 ## Build
 
 ```sh

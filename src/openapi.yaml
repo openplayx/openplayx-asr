@@ -131,6 +131,39 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Job" }
         "404": { $ref: "#/components/responses/Error" }
+  /v1/audio-uploads:
+    post:
+      summary: Stage audio for MCP create_transcription (returns audio_ref)
+      description: >-
+        Same body, header and format checks as job creation. The audio_ref is
+        bound to the uploading user, the SHA-256 and duration, expires after
+        one hour, and at most 4 are held per user. Referencing it from
+        `POST /mcp` tools/call create_transcription creates the job.
+      parameters:
+        - { name: X-Content-SHA256, in: header, required: true, schema: { type: string, pattern: "^[0-9a-f]{64}$" } }
+      requestBody:
+        required: true
+        content:
+          audio/wav:
+            schema: { type: string, format: binary }
+      responses:
+        "201":
+          description: Staged
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [audio_ref, sha256, audio_ms, size_bytes, expires_at]
+                properties:
+                  audio_ref: { type: string, pattern: "^aud_[0-9a-f]{32}$" }
+                  sha256: { type: string }
+                  audio_ms: { type: integer }
+                  size_bytes: { type: integer }
+                  expires_at: { type: string, format: date-time }
+        "400": { $ref: "#/components/responses/Error" }
+        "413": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
 components:
   securitySchemes:
     bearer: { type: http, scheme: bearer }
