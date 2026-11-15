@@ -20,14 +20,14 @@ Thanks for your interest. Bug reports, fixes and small improvements are welcome.
 
    ```sh
    (cd src && go test ./...)   # fake engine, no native build needed
-   scripts/build.sh            # native build against whisper-package
+   scripts/build.sh            # native build against package-whisper
    ```
 
 4. The HTTP API (`src/openapi.yaml`), MCP tools and error codes are a contract
    with the OpenPlayX app and other clients. Keep `openapi.yaml` in sync with
    the code and call out breaking changes in the pull request.
 5. The engine is reached through the `opx_asr` C ABI from
-   [whisper-package](https://github.com/openplayx/whisper-package). ABI changes
+   [package-whisper](https://github.com/openplayx/package-whisper). ABI changes
    start there and must keep the Dart and Go sides returning the same result
    structure.
 6. Update the README in both languages (`README.md` and `README.zh-CN.md`)

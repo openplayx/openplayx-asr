@@ -8,7 +8,7 @@ Standalone speech recognition service for [OpenPlayX](https://github.com/openpla
 an HTTP API and MCP endpoint that turns audio into timestamped transcripts. One
 resident Go process; a single worker calls **whisper.cpp in-process** through
 the same `opx_asr` C ABI the app embeds
-([whisper-package](https://github.com/openplayx/whisper-package)), so both
+([package-whisper](https://github.com/openplayx/package-whisper)), so both
 backends return identical result structures.
 
 - No `ffmpeg`, `whisper-cli` or `whisper-server` process is ever started.
@@ -68,12 +68,12 @@ service code as the HTTP handlers (no second state, no loopback request).
 ## Build
 
 Requirements: Go 1.24+, a C/C++ toolchain and CMake, and a checkout of
-[whisper-package](https://github.com/openplayx/whisper-package) next to this
+[package-whisper](https://github.com/openplayx/package-whisper) next to this
 repository (or set `OPX_WHISPER_PACKAGE` to its path).
 
 ```sh
-git clone https://github.com/openplayx/whisper-package ../whisper-package
-scripts/build.sh            # builds ../whisper-package (pinned whisper.cpp 1.9.5) and dist/openplayx-asr
+git clone https://github.com/openplayx/package-whisper ../package-whisper
+scripts/build.sh            # builds ../package-whisper (pinned whisper.cpp 1.9.5) and dist/openplayx-asr
 dist/openplayx-asr -version # "available=true" means the engine is linked
 cd src && go test ./...     # API/store tests with a fake engine (no native build)
 ```

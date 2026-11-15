@@ -4,7 +4,7 @@ package main
 
 /*
 // Search paths come from CGO_CFLAGS/CGO_LDFLAGS (scripts/build.sh points
-// them at whisper-package's opx_asr.h, libopx_asr.a and the pinned
+// them at package-whisper's opx_asr.h, libopx_asr.a and the pinned
 // whisper.cpp static libraries).
 #cgo LDFLAGS: -lopx_asr -lwhisper -lggml -lggml-cpu -lggml-base -lm
 #cgo darwin LDFLAGS: -framework Accelerate -framework Foundation -lc++

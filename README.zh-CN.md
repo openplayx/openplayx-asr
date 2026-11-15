@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[OpenPlayX](https://github.com/openplayx/openplayx) 的独立语音识别服务：提供 HTTP API 和 MCP 端点，把音频转成带时间戳的文字。单个常驻 Go 进程，由一个 worker 在进程内调用 **whisper.cpp**，走的是 App 内嵌的同一套 `opx_asr` C ABI（[whisper-package](https://github.com/openplayx/whisper-package)），所以两种后端返回的结果结构完全相同。
+[OpenPlayX](https://github.com/openplayx/openplayx) 的独立语音识别服务：提供 HTTP API 和 MCP 端点，把音频转成带时间戳的文字。单个常驻 Go 进程，由一个 worker 在进程内调用 **whisper.cpp**，走的是 App 内嵌的同一套 `opx_asr` C ABI（[package-whisper](https://github.com/openplayx/package-whisper)），所以两种后端返回的结果结构完全相同。
 
 - 不启动任何 `ffmpeg`、`whisper-cli` 或 `whisper-server` 进程。
 - 只接受 App 已经规范化好的音频（16 kHz 单声道 16 位 PCM WAV）。不接受视频链接、NAS 凭据或客户端路径，也不做格式转换。
@@ -40,11 +40,11 @@
 
 ## 构建
 
-依赖：Go 1.24+、C/C++ 工具链和 CMake，以及与本仓库放在同级目录的 [whisper-package](https://github.com/openplayx/whisper-package) 检出（或用 `OPX_WHISPER_PACKAGE` 指定路径）。
+依赖：Go 1.24+、C/C++ 工具链和 CMake，以及与本仓库放在同级目录的 [package-whisper](https://github.com/openplayx/package-whisper) 检出（或用 `OPX_WHISPER_PACKAGE` 指定路径）。
 
 ```sh
-git clone https://github.com/openplayx/whisper-package ../whisper-package
-scripts/build.sh            # 构建 ../whisper-package（锁定 whisper.cpp 1.9.5）和 dist/openplayx-asr
+git clone https://github.com/openplayx/package-whisper ../package-whisper
+scripts/build.sh            # 构建 ../package-whisper（锁定 whisper.cpp 1.9.5）和 dist/openplayx-asr
 dist/openplayx-asr -version # 显示 "available=true" 表示引擎已链接
 cd src && go test ./...     # 使用模拟引擎的 API/存储测试（不需要原生构建）
 ```

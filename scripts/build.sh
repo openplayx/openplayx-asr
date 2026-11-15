@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # Builds the native service for the host: pinned whisper.cpp + the opx_asr
-# C ABI from whisper-package, linked statically through cgo.
-#   OPX_WHISPER_PACKAGE  path to whisper-package (default: sibling checkout,
-#                        or src/whisper-package as a CI companion)
+# C ABI from package-whisper, linked statically through cgo.
+#   OPX_WHISPER_PACKAGE  path to package-whisper (default: sibling checkout,
+#                        or src/package-whisper as a CI companion)
 # Output: dist/openplayx-asr
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 pkg="${OPX_WHISPER_PACKAGE:-}"
-for candidate in "$pkg" "$root/../whisper-package" "$root/../src/whisper-package"; do
+for candidate in "$pkg" "$root/../package-whisper" "$root/../src/package-whisper"; do
   if [ -n "$candidate" ] && [ -f "$candidate/src/opx_asr.h" ]; then pkg="$(cd "$candidate" && pwd)"; break; fi
 done
-[ -f "$pkg/src/opx_asr.h" ] || { echo "whisper-package not found (set OPX_WHISPER_PACKAGE)" >&2; exit 1; }
+[ -f "$pkg/src/opx_asr.h" ] || { echo "package-whisper not found (set OPX_WHISPER_PACKAGE)" >&2; exit 1; }
 "$pkg/tool/build_host_lib.sh" >/dev/null
 case "$(uname -s)-$(uname -m)" in
   Darwin-arm64) target=macos-arm64 ;;
